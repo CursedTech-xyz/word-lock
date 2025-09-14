@@ -1,12 +1,134 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { Header } from '@/components/Header';
+import { EncryptionCard } from '@/components/EncryptionCard';
+import { AlgorithmInfo } from '@/components/AlgorithmInfo';
+import { FileUpload } from '@/components/FileUpload';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Shield, Key, Info, Upload } from 'lucide-react';
 
 const Index = () => {
+  const [mode, setMode] = useState<'encrypt' | 'decrypt'>('encrypt');
+  const [fileContent, setFileContent] = useState('');
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Hero Section */}
+          <div className="text-center space-y-4 py-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-sm text-primary-glow">
+              <Shield className="w-4 h-4" />
+              <span>Client-Side Security</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold">
+              Professional Text{' '}
+              <span className="gradient-text">Encryption</span>
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Secure your messages with multiple encryption algorithms. 
+              All processing happens locally for maximum privacy.
+            </p>
+          </div>
+
+          {/* Main Interface */}
+          <Tabs defaultValue="encrypt-decrypt" className="space-y-6">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 glass-card">
+              <TabsTrigger value="encrypt-decrypt" className="data-[state=active]:bg-primary/20">
+                <Key className="w-4 h-4 mr-2" />
+                Encrypt/Decrypt
+              </TabsTrigger>
+              <TabsTrigger value="file-upload" className="data-[state=active]:bg-primary/20">
+                <Upload className="w-4 h-4 mr-2" />
+                File Upload
+              </TabsTrigger>
+              <TabsTrigger value="algorithms" className="data-[state=active]:bg-primary/20">
+                <Info className="w-4 h-4 mr-2" />
+                Algorithms
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="encrypt-decrypt" className="space-y-6">
+              <EncryptionCard mode={mode} onModeChange={setMode} />
+            </TabsContent>
+
+            <TabsContent value="file-upload" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <FileUpload onFileContent={setFileContent} />
+                <Card className="glass-card">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">File Content Preview</h3>
+                    <div className="monaco-editor min-h-[200px] max-h-[300px] overflow-auto">
+                      {fileContent ? (
+                        <pre className="text-sm whitespace-pre-wrap break-words">
+                          {fileContent}
+                        </pre>
+                      ) : (
+                        <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                          <div className="text-center">
+                            <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p>Upload a file to see its contents here</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {fileContent && (
+                      <div className="mt-4 text-xs text-muted-foreground">
+                        {fileContent.length} characters loaded
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="algorithms">
+              <AlgorithmInfo />
+            </TabsContent>
+          </Tabs>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
+            <Card className="glass-card text-center">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Client-Side Processing</h3>
+                <p className="text-sm text-muted-foreground">
+                  All encryption happens in your browser. Your data never leaves your device.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card text-center">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Key className="w-6 h-6 text-secondary" />
+                </div>
+                <h3 className="font-semibold mb-2">Multiple Algorithms</h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose from Caesar cipher, Base64, ROT13, and XOR encryption methods.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card text-center">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Upload className="w-6 h-6 text-accent" />
+                </div>
+                <h3 className="font-semibold mb-2">File Support</h3>
+                <p className="text-sm text-muted-foreground">
+                  Upload text files for batch encryption and download results instantly.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
