@@ -4,6 +4,30 @@ import { Shield, Code, RotateCcw, Key, Clock, Zap } from 'lucide-react';
 
 const algorithmData = [
   {
+    id: 'aes256',
+    name: 'AES-256',
+    icon: Shield,
+    security: 'Very High',
+    speed: 'Fast',
+    description: 'Advanced Encryption Standard with 256-bit key using Galois/Counter Mode (GCM) for authenticated encryption.',
+    useCases: ['File encryption', 'Database encryption', 'VPN tunnels', 'Secure messaging'],
+    pros: ['Industry standard', 'Very fast', 'Authenticated encryption', 'NIST approved'],
+    cons: ['Requires secure key management', 'Same key for encrypt/decrypt', 'Key must be shared securely'],
+    securityColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+  },
+  {
+    id: 'rsa',
+    name: 'RSA',
+    icon: Key,
+    security: 'Very High',
+    speed: 'Moderate',
+    description: 'RSA public-key cryptosystem using OAEP padding for secure asymmetric encryption and digital signatures.',
+    useCases: ['Secure key exchange', 'Digital signatures', 'PKI systems', 'Hybrid cryptosystems'],
+    pros: ['No shared secrets', 'Digital signatures', 'Perfect forward secrecy', 'Well-studied algorithm'],
+    cons: ['Slower than symmetric', 'Large key sizes', 'Limited message size', 'Complex key management'],
+    securityColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+  },
+  {
     id: 'caesar',
     name: 'Caesar Cipher',
     icon: Shield,

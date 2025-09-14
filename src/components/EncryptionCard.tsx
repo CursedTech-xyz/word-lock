@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Download, RotateCcw, Shield, Key, Hash, Code } from 'lucide-react';
+import { Copy, Download, RotateCcw, Shield, Key, Hash, Code, Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { encryptAES256, decryptAES256, encryptRSA, decryptRSA, analyzePasswordStrength } from '@/lib/crypto';
 
 interface EncryptionCardProps {
   mode: 'encrypt' | 'decrypt';
@@ -15,6 +16,22 @@ interface EncryptionCardProps {
 }
 
 const algorithms = [
+  { 
+    id: 'aes256', 
+    name: 'AES-256', 
+    icon: Shield,
+    description: 'Advanced Encryption Standard with 256-bit key',
+    security: 'Very High',
+    color: 'bg-emerald-500/20 text-emerald-300'
+  },
+  { 
+    id: 'rsa', 
+    name: 'RSA', 
+    icon: Key,
+    description: 'Asymmetric encryption with public/private keys',
+    security: 'Very High',
+    color: 'bg-blue-500/20 text-blue-300'
+  },
   { 
     id: 'caesar', 
     name: 'Caesar Cipher', 
@@ -52,14 +69,20 @@ const algorithms = [
 export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
-  const [algorithm, setAlgorithm] = useState('caesar');
+  const [algorithm, setAlgorithm] = useState('aes256');
   const [caesarShift, setCaesarShift] = useState(3);
   const [xorPassword, setXorPassword] = useState('');
+  const [aesPassword, setAesPassword] = useState('');
+  const [rsaPublicKey, setRsaPublicKey] = useState('');
+  const [rsaPrivateKey, setRsaPrivateKey] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   const selectedAlgorithm = algorithms.find(a => a.id === algorithm);
 
-  // Encryption/Decryption functions
+  // Legacy encryption functions for backward compatibility
   const caesarCipher = (text: string, shift: number, decrypt: boolean = false) => {
     const actualShift = decrypt ? -shift : shift;
     return text.replace(/[a-zA-Z]/g, (char) => {
@@ -106,40 +129,95 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
     }
   };
 
-  const processText = () => {
+  const processText = async () => {
     if (!inputText.trim()) {
       setOutputText('');
       return;
     }
 
-    let result = '';
-    const isDecrypt = mode === 'decrypt';
+    setIsProcessing(true);
+    try {
+      let result = '';
+      const isDecrypt = mode === 'decrypt';
 
-    switch (algorithm) {
-      case 'caesar':
-        result = caesarCipher(inputText, caesarShift, isDecrypt);
-        break;
-      case 'base64':
-        result = base64Process(inputText, isDecrypt);
-        break;
-      case 'rot13':
-        result = rot13Process(inputText);
-        break;
-      case 'xor':
-        result = isDecrypt ? xorDecipher(inputText, xorPassword) : xorCipher(inputText, xorPassword);
-        break;
-      default:
-        result = inputText;
+      switch (algorithm) {
+        case 'aes256':
+          if (!aesPassword) {
+            setOutputText('Password required for AES-256 encryption');
+            setIsProcessing(false);
+            return;
+          }
+          if (mode === 'encrypt') {
+            const encrypted = await encryptAES256(inputText, aesPassword);
+            result = encrypted.encrypted;
+          } else {
+            result = await decryptAES256(inputText, aesPassword);
+          }
+          break;
+        case 'rsa':
+          if (mode === 'encrypt') {
+            if (!rsaPublicKey) {
+              setOutputText('Public key required for RSA encryption');
+              setIsProcessing(false);
+              return;
+            }
+            result = await encryptRSA(inputText, rsaPublicKey);
+          } else {
+            if (!rsaPrivateKey) {
+              setOutputText('Private key required for RSA decryption');
+              setIsProcessing(false);
+              return;
+            }
+            result = await decryptRSA(inputText, rsaPrivateKey);
+          }
+          break;
+        case 'caesar':
+          result = caesarCipher(inputText, caesarShift, isDecrypt);
+          break;
+        case 'base64':
+          result = base64Process(inputText, isDecrypt);
+          break;
+        case 'rot13':
+          result = rot13Process(inputText);
+          break;
+        case 'xor':
+          result = isDecrypt ? xorDecipher(inputText, xorPassword) : xorCipher(inputText, xorPassword);
+          break;
+        default:
+          result = inputText;
+      }
+
+      setOutputText(result);
+      toast({
+        title: `${mode === 'encrypt' ? 'Encryption' : 'Decryption'} Successful`,
+        description: `Text processed using ${algorithms.find(a => a.id === algorithm)?.name}.`,
+      });
+    } catch (error) {
+      setOutputText('Error: Invalid input or operation failed');
+      toast({
+        title: "Processing Error",
+        description: "Failed to process text. Please check your input and keys.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
-
-    setOutputText(result);
   };
+
+  // Password strength analysis
+  useEffect(() => {
+    if (aesPassword) {
+      setPasswordStrength(analyzePasswordStrength(aesPassword));
+    } else {
+      setPasswordStrength(null);
+    }
+  }, [aesPassword]);
 
   // Auto-process when inputs change
   useEffect(() => {
     const timeoutId = setTimeout(processText, 300);
     return () => clearTimeout(timeoutId);
-  }, [inputText, algorithm, caesarShift, xorPassword, mode]);
+  }, [inputText, algorithm, caesarShift, xorPassword, aesPassword, rsaPublicKey, rsaPrivateKey, mode]);
 
   const handleCopy = async () => {
     try {
@@ -160,6 +238,10 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
   const handleClear = () => {
     setInputText('');
     setOutputText('');
+    setAesPassword('');
+    setRsaPublicKey('');
+    setRsaPrivateKey('');
+    setXorPassword('');
   };
 
   const handleDownload = () => {
@@ -174,6 +256,33 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
     URL.revokeObjectURL(url);
   };
 
+  const loadFromLocalStorage = (keyType: 'public' | 'private') => {
+    const savedKeys = localStorage.getItem('rsa-keypairs');
+    if (savedKeys) {
+      try {
+        const keyPairs = JSON.parse(savedKeys);
+        if (keyPairs.length > 0) {
+          const latestKey = keyPairs[0];
+          if (keyType === 'public') {
+            setRsaPublicKey(latestKey.publicKey);
+          } else {
+            setRsaPrivateKey(latestKey.privateKey);
+          }
+          toast({
+            title: "Key Loaded",
+            description: `${keyType === 'public' ? 'Public' : 'Private'} key loaded from Key Manager.`,
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Load Failed",
+          description: "No keys found. Generate keys in the Key Manager first.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   return (
     <Card className={`glass-card ${mode === 'encrypt' ? 'card-encrypt' : 'card-decrypt'} spring-enter`}>
       <CardContent className="p-6 space-y-6">
@@ -185,7 +294,7 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
               onClick={() => onModeChange('encrypt')}
               className={mode === 'encrypt' ? 'premium-button' : ''}
             >
-              <Shield className="w-4 h-4 mr-2" />
+              <Lock className="w-4 h-4 mr-2" />
               Encrypt
             </Button>
             <Button
@@ -193,7 +302,7 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
               onClick={() => onModeChange('decrypt')}
               className={mode === 'decrypt' ? 'premium-button-secondary' : ''}
             >
-              <Key className="w-4 h-4 mr-2" />
+              <Unlock className="w-4 h-4 mr-2" />
               Decrypt
             </Button>
           </div>
@@ -219,6 +328,9 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
                   <div className="flex items-center gap-2">
                     <algo.icon className="w-4 h-4" />
                     <span>{algo.name}</span>
+                    <Badge variant="outline" className="text-xs ml-2">
+                      {algo.security}
+                    </Badge>
                   </div>
                 </SelectItem>
               ))}
@@ -233,6 +345,116 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
         </div>
 
         {/* Algorithm-specific Settings */}
+        {algorithm === 'aes256' && (
+          <div className="space-y-2">
+            <Label htmlFor="aesPassword">AES-256 Password</Label>
+            <div className="relative">
+              <Input
+                id="aesPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter strong password..."
+                value={aesPassword}
+                onChange={(e) => setAesPassword(e.target.value)}
+                className="pr-10 monaco-editor"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+            {passwordStrength && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span>Password Strength</span>
+                  <span className={
+                    passwordStrength.strength === 'excellent' ? 'text-green-600' :
+                    passwordStrength.strength === 'strong' ? 'text-blue-600' :
+                    passwordStrength.strength === 'good' ? 'text-yellow-600' :
+                    passwordStrength.strength === 'fair' ? 'text-orange-600' : 'text-red-600'
+                  }>
+                    {passwordStrength.strength.charAt(0).toUpperCase() + passwordStrength.strength.slice(1)}
+                  </span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      passwordStrength.strength === 'excellent' ? 'bg-green-600' :
+                      passwordStrength.strength === 'strong' ? 'bg-blue-600' :
+                      passwordStrength.strength === 'good' ? 'bg-yellow-600' :
+                      passwordStrength.strength === 'fair' ? 'bg-orange-600' : 'bg-red-600'
+                    }`}
+                    style={{ width: `${(passwordStrength.score / 7) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Entropy: {passwordStrength.entropy.toFixed(1)} bits
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {algorithm === 'rsa' && (
+          <div className="space-y-4">
+            {mode === 'encrypt' ? (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="rsaPublicKey">RSA Public Key</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => loadFromLocalStorage('public')}
+                    className="text-xs"
+                  >
+                    Load from Key Manager
+                  </Button>
+                </div>
+                <Textarea
+                  id="rsaPublicKey"
+                  placeholder="Paste RSA public key here..."
+                  value={rsaPublicKey}
+                  onChange={(e) => setRsaPublicKey(e.target.value)}
+                  className="font-mono text-sm monaco-editor"
+                  rows={4}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use the Key Manager tab to generate or import RSA keys
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="rsaPrivateKey">RSA Private Key</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => loadFromLocalStorage('private')}
+                    className="text-xs"
+                  >
+                    Load from Key Manager
+                  </Button>
+                </div>
+                <Textarea
+                  id="rsaPrivateKey"
+                  placeholder="Paste RSA private key here..."
+                  value={rsaPrivateKey}
+                  onChange={(e) => setRsaPrivateKey(e.target.value)}
+                  className="font-mono text-sm monaco-editor"
+                  rows={6}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Keep your private key secure and never share it
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {algorithm === 'caesar' && (
           <div className="space-y-2">
             <Label htmlFor="shift">Caesar Shift Value</Label>
@@ -243,7 +465,7 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
               onChange={(e) => setCaesarShift(parseInt(e.target.value) || 0)}
               min="1"
               max="25"
-              className="monaco-editor"
+              className="monaco-editor w-24"
             />
           </div>
         )}
@@ -285,15 +507,33 @@ export function EncryptionCard({ mode, onModeChange }: EncryptionCardProps) {
           <Label htmlFor="output">
             {mode === 'encrypt' ? 'Encrypted Result' : 'Decrypted Result'}
           </Label>
-          <Textarea
-            id="output"
-            value={outputText}
-            readOnly
-            className="monaco-editor min-h-[120px] resize-none"
-            rows={6}
-          />
+          <div className="relative">
+            <Textarea
+              id="output"
+              value={outputText}
+              readOnly
+              className="monaco-editor min-h-[120px] resize-none"
+              rows={6}
+            />
+            {isProcessing && (
+              <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-md">
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  Processing...
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{outputText.length} characters</span>
+            <span>
+              {outputText.length} characters
+              {algorithm === 'aes256' && outputText && (
+                <span className="ml-2">• AES-256-GCM encrypted</span>
+              )}
+              {algorithm === 'rsa' && outputText && (
+                <span className="ml-2">• RSA-OAEP encrypted</span>
+              )}
+            </span>
             <span>Processing time: &lt;1ms</span>
           </div>
         </div>

@@ -3,9 +3,11 @@ import { Header } from '@/components/Header';
 import { EncryptionCard } from '@/components/EncryptionCard';
 import { AlgorithmInfo } from '@/components/AlgorithmInfo';
 import { FileUpload } from '@/components/FileUpload';
+import { KeyManager } from '@/components/KeyManager';
+import { HashSuite } from '@/components/HashSuite';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Key, Info, Upload } from 'lucide-react';
+import { Shield, Key, Info, Upload, Hash, Settings } from 'lucide-react';
 
 const Index = () => {
   const [mode, setMode] = useState<'encrypt' | 'decrypt'>('encrypt');
@@ -35,10 +37,18 @@ const Index = () => {
 
           {/* Main Interface */}
           <Tabs defaultValue="encrypt-decrypt" className="space-y-6">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 glass-card">
+            <TabsList className="grid w-full max-w-4xl mx-auto grid-cols-5 glass-card">
               <TabsTrigger value="encrypt-decrypt" className="data-[state=active]:bg-primary/20">
                 <Key className="w-4 h-4 mr-2" />
                 Encrypt/Decrypt
+              </TabsTrigger>
+              <TabsTrigger value="key-manager" className="data-[state=active]:bg-primary/20">
+                <Settings className="w-4 h-4 mr-2" />
+                Key Manager
+              </TabsTrigger>
+              <TabsTrigger value="hash-suite" className="data-[state=active]:bg-primary/20">
+                <Hash className="w-4 h-4 mr-2" />
+                Hash Suite
               </TabsTrigger>
               <TabsTrigger value="file-upload" className="data-[state=active]:bg-primary/20">
                 <Upload className="w-4 h-4 mr-2" />
@@ -52,6 +62,14 @@ const Index = () => {
 
             <TabsContent value="encrypt-decrypt" className="space-y-6">
               <EncryptionCard mode={mode} onModeChange={setMode} />
+            </TabsContent>
+
+            <TabsContent value="key-manager" className="space-y-6">
+              <KeyManager />
+            </TabsContent>
+
+            <TabsContent value="hash-suite" className="space-y-6">
+              <HashSuite />
             </TabsContent>
 
             <TabsContent value="file-upload" className="space-y-6">
