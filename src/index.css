@@ -245,4 +245,107 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  }
+
+  /* Premium animations and effects */
+  .hover-scale {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 20px 40px -10px hsl(var(--primary) / 0.3);
+  }
+
+  /* Enhanced premium buttons with shimmer effect */
+  .premium-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .premium-button:hover::before {
+    left: 100%;
+  }
+
+  /* Loading states */
+  .loading-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Focus styles for accessibility */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Easter egg animations */
+  @keyframes secret-glow {
+    0%, 100% { box-shadow: 0 0 5px hsl(var(--primary) / 0.5); }
+    50% { box-shadow: 0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary-glow)); }
+  }
+
+  .secret-mode {
+    animation: secret-glow 2s ease-in-out infinite;
+  }
+
+  /* Performance optimizations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Enhanced card animations */
+  .card-encrypt:hover {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.3);
+  }
+
+  .card-decrypt:hover {
+    box-shadow: 0 0 30px hsl(var(--secondary) / 0.3);
+  }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+  .glass-card {
+    backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-card {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--border));
+  }
+  
+  .premium-button {
+    border: 2px solid hsl(var(--primary));
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .spring-enter,
+  .hover-scale,
+  .premium-button,
+  .loading-pulse,
+  .secret-mode {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .hover-scale:hover {
+    transform: none;
+  }
+  
+  .premium-button:hover {
+    transform: none;
+  }
 }

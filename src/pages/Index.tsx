@@ -8,9 +8,11 @@ import { HashSuite } from '@/components/HashSuite';
 import { Steganography } from '@/components/Steganography';
 import { CustomAlgorithm } from '@/components/CustomAlgorithm';
 import { AdvancedFileHandler } from '@/components/AdvancedFileHandler';
+import { HelpSystem } from '@/components/HelpSystem';
+import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Key, Info, Upload, Hash, Settings, Image, Code, Folder } from 'lucide-react';
+import { Shield, Key, Info, Upload, Hash, Settings, Image, Code, Folder, HelpCircle, Activity } from 'lucide-react';
 
 const Index = () => {
   const [mode, setMode] = useState<'encrypt' | 'decrypt'>('encrypt');
@@ -40,7 +42,7 @@ const Index = () => {
 
           {/* Main Interface */}
           <Tabs defaultValue="encrypt-decrypt" className="space-y-6">
-            <TabsList className="grid w-full max-w-6xl mx-auto grid-cols-4 lg:grid-cols-8 glass-card">
+            <TabsList className="grid w-full max-w-6xl mx-auto grid-cols-5 lg:grid-cols-10 glass-card">
               <TabsTrigger value="encrypt-decrypt" className="data-[state=active]:bg-primary/20">
                 <Key className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Encrypt/Decrypt</span>
@@ -80,6 +82,16 @@ const Index = () => {
                 <Info className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Algorithms</span>
                 <span className="sm:hidden">Info</span>
+              </TabsTrigger>
+              <TabsTrigger value="help" className="data-[state=active]:bg-primary/20">
+                <HelpCircle className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Help</span>
+                <span className="sm:hidden">Help</span>
+              </TabsTrigger>
+              <TabsTrigger value="performance" className="data-[state=active]:bg-primary/20">
+                <Activity className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Performance</span>
+                <span className="sm:hidden">Perf</span>
               </TabsTrigger>
             </TabsList>
 
@@ -139,6 +151,14 @@ const Index = () => {
 
             <TabsContent value="algorithms">
               <AlgorithmInfo />
+            </TabsContent>
+
+            <TabsContent value="help">
+              <HelpSystem />
+            </TabsContent>
+
+            <TabsContent value="performance">
+              <PerformanceMonitor />
             </TabsContent>
           </Tabs>
 
