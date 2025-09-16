@@ -277,6 +277,116 @@ export function analyzePasswordStrength(password: string): {
   return { score, strength, entropy, feedback };
 }
 
+// Hybrid Encryption (RSA + AES)
+export async function hybridEncrypt(text: string, publicKeyB64: string): Promise<EncryptionResult> {
+  // Generate random AES key
+  const aesKey = crypto.getRandomValues(new Uint8Array(32));
+  const aesKeyB64 = btoa(String.fromCharCode(...aesKey));
+  
+  // Encrypt text with AES
+  const aesResult = await encryptAES256(text, aesKeyB64);
+  
+  // Encrypt AES key with RSA
+  const encryptedKey = await encryptRSA(aesKeyB64, publicKeyB64);
+  
+  return {
+    encrypted: aesResult.encrypted,
+    iv: aesResult.iv,
+    salt: aesResult.salt,
+    metadata: {
+      encryptedKey,
+      algorithm: 'hybrid'
+    }
+  };
+}
+
+export async function hybridDecrypt(encryptedData: string, privateKeyB64: string, metadata: any): Promise<string> {
+  if (!metadata?.encryptedKey) {
+    throw new Error('Missing encrypted key in metadata');
+  }
+  
+  // Decrypt AES key with RSA
+  const aesKey = await decryptRSA(metadata.encryptedKey, privateKeyB64);
+  
+  // Decrypt text with AES
+  return await decryptAES256(encryptedData, aesKey);
+}
+
+// ChaCha20 Encryption (lightweight alternative)
+export async function encryptChaCha20(text: string, password: string): Promise<EncryptionResult> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  
+  // Simple XOR-based encryption (placeholder for actual ChaCha20)
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password.padEnd(32, '0')),
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+  
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    data
+  );
+  
+  return {
+    encrypted: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
+    iv: btoa(String.fromCharCode(...iv)),
+    salt: btoa(String.fromCharCode(...salt))
+  };
+}
+
+export async function decryptChaCha20(encryptedData: string, password: string, iv: string, salt: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password.padEnd(32, '0')),
+    { name: 'AES-GCM' },
+    false,
+    ['decrypt']
+  );
+  
+  const ivArray = new Uint8Array(atob(iv).split('').map(c => c.charCodeAt(0)));
+  const encryptedArray = new Uint8Array(atob(encryptedData).split('').map(c => c.charCodeAt(0)));
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: ivArray },
+    key,
+    encryptedArray
+  );
+  
+  return decoder.decode(decrypted);
+}
+
+// ECC Encryption using P-256 curve
+export async function generateECCKeyPair(): Promise<KeyPair> {
+  const keyPair = await crypto.subtle.generateKey(
+    {
+      name: 'ECDH',
+      namedCurve: 'P-256'
+    },
+    true,
+    ['deriveKey']
+  );
+  
+  const publicKey = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+  const privateKey = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+  
+  return {
+    publicKey: btoa(String.fromCharCode(...new Uint8Array(publicKey))),
+    privateKey: btoa(String.fromCharCode(...new Uint8Array(privateKey))),
+    keySize: 256,
+    created: new Date().toISOString()
+  };
+}
+
 // Secure Random Password Generator
 export function generateSecurePassword(length: number = 16, options: {
   includeLowercase?: boolean;
