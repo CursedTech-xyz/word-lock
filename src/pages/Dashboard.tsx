@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Shield, 
@@ -128,9 +128,10 @@ export default function Dashboard() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                {React.createElement(cryptoFacts[currentFact].icon, { 
-                  className: "w-6 h-6 text-primary mt-1" 
-                })}
+                {(() => {
+                  const IconComponent = cryptoFacts[currentFact].icon;
+                  return <IconComponent className="w-6 h-6 text-primary mt-1" />;
+                })()}
                 <div>
                   <h4 className="font-semibold mb-1">{cryptoFacts[currentFact].title}</h4>
                   <p className="text-sm text-muted-foreground">

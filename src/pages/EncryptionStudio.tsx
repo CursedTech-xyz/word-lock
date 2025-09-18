@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { EncryptionCard } from '@/components/EncryptionCard';
 import { HybridEncryption } from '@/components/HybridEncryption';
@@ -97,9 +97,10 @@ export default function EncryptionStudio() {
             {/* Tool Info */}
             <div className="mt-4 p-4 bg-muted/30 rounded-lg">
               <div className="flex items-center gap-3">
-                {React.createElement(tools.find(t => t.id === tool)?.icon || Shield, { 
-                  className: "w-5 h-5 text-primary" 
-                })}
+                {(() => {
+                  const IconComponent = tools.find(t => t.id === tool)?.icon || Shield;
+                  return <IconComponent className="w-5 h-5 text-primary" />;
+                })()}
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{tools.find(t => t.id === tool)?.label}</h3>
